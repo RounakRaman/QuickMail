@@ -1,0 +1,8 @@
+email
+smtplib
+pandas 
+concurrent.futures
+time
+dotenv
+os
+google.generativeai
