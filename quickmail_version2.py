@@ -8,7 +8,8 @@ import concurrent.futures
 import time
 from dotenv import load_dotenv
 import os
-import google.generativeai as genai  
+import google.generativeai as genai 
+import winsound 
 
 load_dotenv()
 
@@ -104,6 +105,7 @@ def send_email(receiver_email, name, relevant_field, attachment_package, company
             connection.login(user=email, password=password_1)
             connection.send_message(msg)
         print(f"Email successfully sent to {receiver_email}")
+        winsound.Beep(1000, 1000)  # Frequency 1000Hz, duration 500ms
     except Exception as e:
         print(f"Error sending email: {e}")
 
@@ -124,8 +126,9 @@ def process_row(row, attachment_package):
 
 if __name__ == "__main__":
     try:
+        
         # Reading the CSV file
-        df = pd.read_csv("data1.csv")
+        df = pd.read_csv("data.csv")
         print(f"Loaded {len(df)} rows from CSV")
 
         # Reading the resume file

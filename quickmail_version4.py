@@ -1,6 +1,13 @@
 from email import encoders
+import imaplib
 from email.mime.base import MIMEBase
+from email import policy
+from email.parser import BytesParser
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import smtplib
+import csv
+import time
 from email.message import EmailMessage
 from email.utils import formataddr
 import pandas as pd
@@ -8,16 +15,24 @@ import concurrent.futures
 import time
 from dotenv import load_dotenv
 import os
-import google.generativeai as genai  
-
+import google.generativeai as genai 
+import winsound 
+from datetime import datetime, timedelta
+from email.utils import parsedate_to_datetime
+import re 
 load_dotenv()
 
 # Sender's credentials
-email = "ramanrounak.work@gmail.com"
+SMTP_SERVER = 'smtp.gmail.com'
+SMTP_PORT = 587
+IMAP_SERVER = 'imap.gmail.com'
+email_sender = "ramanrounak.work@gmail.com"
 password_1 = os.getenv("PASSWORD")
 API_KEY = os.getenv("API")
 genai.configure(api_key=API_KEY)
 name_sender="Rounak Raman (NSUT)"
+
+OUTPUT_FILE = "correctdatabase.csv"
 
 # Function to get relevant field
 def getRelevantField(company):
@@ -51,12 +66,12 @@ def getSubject(name, company):
         print(f"Error getting subject: {e}")
         return f"Referral Request for {company}"  # fallback subject
 
+
 def send_email(receiver_email, name, relevant_field, attachment_package, company):
     try:
         msg = EmailMessage()
-        print("Hi")
         msg['Subject'] = getSubject(name, company)
-        msg['From'] = formataddr((f"{name_sender}", email))
+        msg['From'] = formataddr((f"{name_sender}", email_sender))
         msg['To'] = receiver_email
 
         # Add a plain text version of the email
@@ -78,7 +93,6 @@ def send_email(receiver_email, name, relevant_field, attachment_package, company
         +91-8826879389
         """
 
-
         html_content = f'''
         <html>
         <body>
@@ -95,20 +109,91 @@ def send_email(receiver_email, name, relevant_field, attachment_package, company
         </html>
         '''
 
-        print("Hola")
         msg.set_content(plain_text)
         msg.add_alternative(html_content, subtype="html")
         msg.add_attachment(attachment_package.get_payload(decode=True), maintype='application', subtype='octet-stream', filename=attachment_package.get_filename())
 
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as connection:
-            connection.login(user=email, password=password_1)
+            connection.login(user=email_sender, password=password_1)
             connection.send_message(msg)
+
         print(f"Email successfully sent to {receiver_email}")
+        winsound.Beep(1000, 1000)  # Frequency 1000Hz, duration 500ms
     except Exception as e:
         print(f"Error sending email: {e}")
 
-def process_row(row, attachment_package):
-    
+
+def is_recent(sent_time, received_date, time_window=5):
+    """
+    Check if the bounce email timestamp is close to the sent email timestamp.
+
+    Arguments:
+    - sent_time: Datetime when the email was sent.
+    - received_date: Datetime when the bounce email was received.
+    - time_window: Allowed time difference in seconds (default is 300 seconds = 5 minutes).
+
+    Returns:
+    - True if the bounce is recent and matches the sent email, False otherwise.
+    """
+    try:
+        # Remove timezone information if present (make both naive)
+        sent_time = sent_time.replace(tzinfo=None)  # Make sent_time naive
+        received_datetime = parsedate_to_datetime(received_date).replace(tzinfo=None)  # Make received_date naive
+
+        # Calculate the time difference
+        time_difference = abs((received_datetime - sent_time).total_seconds())
+        return time_difference <= time_window  # Returns True if within allowed time window
+    except Exception as e:
+        print(f"Error parsing dates: {e}")
+        return False
+
+
+def check_for_bounce(to_address, sent_email_log):
+    """
+    Check if an email to a specific address bounced based on the subject line and body.
+
+    Arguments:
+    - to_address: The recipient email address to check.
+    - sent_email_log: A dictionary of sent emails with timestamps or IDs.
+
+    Returns:
+    - True if a bounce is detected for the given address, False otherwise.
+    """
+    try:
+        with imaplib.IMAP4_SSL(IMAP_SERVER) as mail:
+            mail.login(email_sender, password_1)
+            mail.select('inbox')
+
+            # Search for bounce emails
+            status, data = mail.search(None, '(FROM "mailer-daemon" SUBJECT "Delivery Status Notification (Failure)")')
+            if status != 'OK' or not data[0]:
+                print("kyu hai bhai tu")
+                return False  # No bounce emails found
+
+            for num in data[0].split():
+                status, msg_data = mail.fetch(num, '(RFC822)')
+                if status != 'OK':
+                    print("kaisa hai bhai")
+                    continue  # Skip if fetching fails
+
+                # Parse the email to extract the subject, date, and body
+                msg = BytesParser(policy=policy.default).parsebytes(msg_data[0][1])
+                subject = msg['Subject']
+                received_date = msg['Date']
+                body = msg.get_body(preferencelist=('plain')).get_payload(decode=True).decode()
+
+                # Check if the bounce contains the address and invalid message
+                if to_address in body and re.search(r"550 5\.1\.1", body):
+                    print("aara bhai")
+                    print(f"Bounced email detected for: {to_address}")
+                    return True
+
+        return False
+    except Exception as e:
+        print(f"Error checking bounce for {to_address}: {e}")
+        return False
+
+def process_row(row, attachment_package, sent_email_log):
     try:
         print("Processing email for:", row["Name"])
         relevant_field = getRelevantField(row["Company name"])
@@ -119,16 +204,28 @@ def process_row(row, attachment_package):
             attachment_package=attachment_package,
             company=row["Company name"]
         )
+        sent_email_log[row["emails"]] = datetime.now()  # Log the timestamp
+
+        print("Waiting 1 second for delivery confirmation...")
+        time.sleep(1)
+        if not check_for_bounce(row["emails"], sent_email_log):  # Check bounce using sent_email_log
+            
+            with open(OUTPUT_FILE, "a") as f:
+                f.write(f"{row['Name']},{row['Company name']},{row['emails']}\n")
+            print(f"Email validated for {row['emails']}")
+        else:
+            print(f"Email invalid: {row['emails']}")
+
     except Exception as e:
         print(f"Error processing row: {e}")
 
+
 if __name__ == "__main__":
     try:
-        # Reading the CSV file
-        df = pd.read_csv("data1.csv")
+        sent_email_log = {}  # Initialize sent_email_log
+        df = pd.read_csv("data.csv")
         print(f"Loaded {len(df)} rows from CSV")
 
-        # Reading the resume file
         filename = "Rounak_Raman_Resume.pdf"
         with open(filename, 'rb') as attachment:
             attachment_package = MIMEBase('application', 'octet-stream')
@@ -145,15 +242,14 @@ if __name__ == "__main__":
                 batch = df.iloc[x:x + BATCH_SIZE]
                 futures = []
                 for _, row in batch.iterrows():
-                    future = executor.submit(process_row, row.to_dict(), attachment_package)
+                    future = executor.submit(process_row, row.to_dict(), attachment_package, sent_email_log)
                     futures.append(future)
-                
-                # Wait for all futures to complete
+
                 concurrent.futures.wait(futures)
 
             x += BATCH_SIZE
             print(f"Batch completed, waiting 60 seconds...")
-            time.sleep(60)
+            time.sleep(5)
 
     except Exception as e:
         print(f"Main process error: {e}")
