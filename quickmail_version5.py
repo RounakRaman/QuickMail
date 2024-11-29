@@ -17,7 +17,7 @@ import time
 from dotenv import load_dotenv
 import os
 import google.generativeai as genai 
-import winsound 
+#import winsound 
 from datetime import datetime, timedelta
 from email.utils import parsedate_to_datetime
 import re 
@@ -126,7 +126,7 @@ def send_email(receiver_email, name, relevant_field, attachment_package, company
             connection.send_message(msg)
 
         print(f"Email successfully sent to {receiver_email}")
-        winsound.Beep(1000, 1000)  # Frequency 1000Hz, duration 500ms
+#        winsound.Beep(1000, 1000)  # Frequency 1000Hz, duration 500ms
     except Exception as e:
         print(f"Error sending email: {e}")
 

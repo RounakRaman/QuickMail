@@ -2,4 +2,3 @@ pandas
 python-dotenv
 google.generativeai
 streamlit 
-winsound
