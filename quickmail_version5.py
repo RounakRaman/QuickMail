@@ -1,3 +1,4 @@
+import streamlit as st
 from email import encoders
 import imaplib
 from email.mime.base import MIMEBase
@@ -20,24 +21,37 @@ import winsound
 from datetime import datetime, timedelta
 from email.utils import parsedate_to_datetime
 import re 
-load_dotenv()
 
-# Sender's credentials
 SMTP_SERVER = 'smtp.gmail.com'
 SMTP_PORT = 587
 IMAP_SERVER = 'imap.gmail.com'
-email_sender = "ramanrounak.work@gmail.com"
-password_1 = os.getenv("PASSWORD")
+
+# Load environment variables
+load_dotenv()
 API_KEY = os.getenv("API")
 genai.configure(api_key=API_KEY)
-name_sender="Rounak Raman (NSUT)"
+
+# Streamlit UI elements
+st.title('QuickMail Email Sending Tool')
+
+# Email credentials
+name_sender = st.text_input("Enter Sender's Name :")
+email_sender = st.text_input('Enter Sender Email:')
+password_1 = st.text_input('Enter Email Password:', type="password")
+attachment_file = st.file_uploader('Upload Attachment (Optional)', type=['pdf', 'docx', 'jpg'])
 
 OUTPUT_FILE = "correctdatabase.csv"
 
-# Function to get relevant field
+# CSV File Upload
+uploaded_file = st.file_uploader("Upload CSV File", type="csv")
+if uploaded_file is not None:
+    df = pd.read_csv(uploaded_file)
+    st.write("Data Preview", df.head())
+
+# Function to get subject and relevant field
 def getRelevantField(company):
     try:
-        model = genai.GenerativeModel("gemini-1.0-pro")  # Changed model name to correct version
+        model = genai.GenerativeModel("gemini-1.0-pro")  # Using the correct model
         response = model.generate_content(
             f"What is the relevant field in which the {company} is working? Mention only the prominent field in short",
             generation_config=genai.types.GenerationConfig(
@@ -48,12 +62,11 @@ def getRelevantField(company):
         return response.text
     except Exception as e:
         print(f"Error getting relevant field: {e}")
-        return "technology and data solutions"  # fallback value
+        return "technology and data solutions"
 
-# Function to get subject
 def getSubject(name, company):
     try:
-        model = genai.GenerativeModel("gemini-1.0-pro")  # Changed model name
+        model = genai.GenerativeModel("gemini-1.0-pro")  # Using the correct model
         response = model.generate_content(
             f"Please generate a formal and concise email subject line that addresses {name} and requests a referral for open positions at {company}.",
             generation_config=genai.types.GenerationConfig(
@@ -64,9 +77,9 @@ def getSubject(name, company):
         return response.text
     except Exception as e:
         print(f"Error getting subject: {e}")
-        return f"Referral Request for {company}"  # fallback subject
+        return f"Referral Request for {company}"
 
-
+# Function to send email
 def send_email(receiver_email, name, relevant_field, attachment_package, company):
     try:
         msg = EmailMessage()
@@ -74,25 +87,19 @@ def send_email(receiver_email, name, relevant_field, attachment_package, company
         msg['From'] = formataddr((f"{name_sender}", email_sender))
         msg['To'] = receiver_email
 
-        # Add a plain text version of the email
         plain_text = f"""
         Hi {name},
 
-        I hope you're doing well! I'm Rounak Raman, a final-year student at NSUT doing my major in Information Technology with experience in data analysis, machine learning, and project management. My recent work includes developing predictive models for cognitive disability analysis at DRDO-INMAS and creating an air quality dashboard to reduce pollution levels in Delhi during my internship at Nation With Namo.
+        I hope you're doing well! I'm Rounak Raman, a final-year student at NSUT doing my major in Information Technology with experience in data analysis, machine learning, and project management.
 
-        I admire your company's focus on {relevant_field}. The innovative approaches your team employs in {relevant_field} resonate with my interests and career aspirations. I believe contributing to such impactful work would be a fantastic opportunity for growth and learning.
-
-        With skills in Python, SQL, Power BI, and end-to-end ML pipelines along with product management skills, I am confident in my ability to add value to your team. My projects on global economic indicators and air quality analysis highlight my ability to solve real-world challenges through data-driven solutions.
+        I admire your company's focus on {relevant_field}. The innovative approaches your team employs in {relevant_field} resonate with my interests and career aspirations.
 
         If you could kindly refer me for a relevant opportunity at your organization, I would be deeply grateful.
-
-        Thank you for considering my request! I look forward to the chance to collaborate.
 
         Best regards,
         Rounak Raman
         +91-8826879389
         """
-
         html_content = f'''
         <html>
         <body>
@@ -108,10 +115,11 @@ def send_email(receiver_email, name, relevant_field, attachment_package, company
         </body>
         </html>
         '''
-
+        
         msg.set_content(plain_text)
         msg.add_alternative(html_content, subtype="html")
-        msg.add_attachment(attachment_package.get_payload(decode=True), maintype='application', subtype='octet-stream', filename=attachment_package.get_filename())
+        if attachment_package:
+            msg.add_attachment(attachment_package.get_payload(decode=True), maintype='application', subtype='octet-stream', filename=attachment_package.get_filename())
 
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as connection:
             connection.login(user=email_sender, password=password_1)
@@ -121,8 +129,6 @@ def send_email(receiver_email, name, relevant_field, attachment_package, company
         winsound.Beep(1000, 1000)  # Frequency 1000Hz, duration 500ms
     except Exception as e:
         print(f"Error sending email: {e}")
-
-
 
 def check_for_bounce(to_address, sent_email_log):
     """
@@ -167,8 +173,9 @@ def check_for_bounce(to_address, sent_email_log):
         return False
     except Exception as e:
         print(f"Error checking bounce for {to_address}: {e}")
-        return False
+        return False        
 
+# Function to process each row in CSV and send emails
 def process_row(row, attachment_package, sent_email_log):
     try:
         print("Processing email for:", row["Name"])
@@ -184,7 +191,10 @@ def process_row(row, attachment_package, sent_email_log):
 
         print("Waiting 1 second for delivery confirmation...")
         time.sleep(1)
+        st.write(f"Email sent successfully to: {row['emails']}")
+
         if not check_for_bounce(row["emails"], sent_email_log):  # Check bounce using sent_email_log
+            output_data.append({"Name": row["Name"], "Company name": row["Company name"], "emails": row["emails"]})
             
             with open(OUTPUT_FILE, "a") as f:
                 f.write(f"{row['Name']},{row['Company name']},{row['emails']}\n")
@@ -194,20 +204,30 @@ def process_row(row, attachment_package, sent_email_log):
 
     except Exception as e:
         print(f"Error processing row: {e}")
+        st.write(f"Error processing email for {row['emails']}: {e}")
 
 
-if __name__ == "__main__":
-    try:
-        sent_email_log = {}  # Initialize sent_email_log
-        df = pd.read_csv("data.csv")
-        print(f"Loaded {len(df)} rows from CSV")
+ 
+        
 
-        filename = "Rounak_Raman_Resume.pdf"
-        with open(filename, 'rb') as attachment:
-            attachment_package = MIMEBase('application', 'octet-stream')
-            attachment_package.set_payload(attachment.read())
-            encoders.encode_base64(attachment_package)
-            attachment_package.add_header('Content-Disposition', f"attachment; filename={filename}")
+# Output list to collect valid emails
+output_data = []
+
+# Process button for sending emails
+if st.button("Send Emails"):
+    sent_email_log = {}
+    if uploaded_file and email_sender and password_1 and name_sender:
+        
+        
+        # Handling the attachment
+        attachment_package = None
+        if attachment_file is not None:
+            filename = "Rounak_Raman_Resume.pdf"
+            with open(filename, 'rb') as attachment:
+                attachment_package = MIMEBase('application', 'octet-stream')
+                attachment_package.set_payload(attachment.read())
+                encoders.encode_base64(attachment_package)
+                attachment_package.add_header('Content-Disposition', f"attachment; filename={filename}")
 
         BATCH_SIZE = 1
         x = 0
@@ -217,15 +237,31 @@ if __name__ == "__main__":
             with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
                 batch = df.iloc[x:x + BATCH_SIZE]
                 futures = []
-                for _, row in batch.iterrows():
-                    future = executor.submit(process_row, row.to_dict(), attachment_package, sent_email_log)
-                    futures.append(future)
+                for _, row in df.iterrows():
+                    for _, row in batch.iterrows():
+                        future = executor.submit(process_row, row.to_dict(), attachment_package, sent_email_log)
+                        futures.append(future)
 
                 concurrent.futures.wait(futures)
-
             x += BATCH_SIZE
             print(f"Batch completed, waiting 5 seconds...")
-            time.sleep(5)
+            time.sleep(5)    
 
-    except Exception as e:
-        print(f"Main process error: {e}")
+        # Output file for successful emails
+        output_df = pd.DataFrame(output_data)
+        output_file = "output_emails.csv"
+        output_df.to_csv(output_file, index=False)
+
+        st.write("Emails have been sent successfully. Below is the valid email list.")
+        st.write(output_df)
+
+        # Download button for the result CSV
+        with open(output_file, "rb") as f:
+            st.download_button(
+                label="Download Valid Emails CSV",
+                data=f,
+                file_name="valid_emails.csv",
+                mime="text/csv"
+            )
+    else:
+        st.error("Please upload the CSV file and provide the email sender credentials.")
