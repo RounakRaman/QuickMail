@@ -1,11 +1,3 @@
-smtplib
-pandas 
-concurrent.futures
-time
-dotenv
-os
+pandas
+python-dotenv
 google.generativeai
-csv
-time
-imaplib
-re
