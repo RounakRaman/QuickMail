@@ -213,9 +213,9 @@ if st.button("Send Emails"):
         attachment_package = None
         if attachment_file is not None:
             filename = f"{name_sender}_Resume.pdf"
-            with open(filename, 'rb') as attachment:
+            with open(attachment_file, 'rb') as attachment_package:
                 attachment_package = MIMEBase('application', 'octet-stream')
-                attachment_package.set_payload(attachment.read())
+                attachment_package.set_payload(attachment_file.read())
                 encoders.encode_base64(attachment_package)
                 attachment_package.add_header('Content-Disposition', f"attachment; filename={filename}")
 
