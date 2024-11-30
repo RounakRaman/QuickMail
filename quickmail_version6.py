@@ -160,6 +160,21 @@ def check_for_bounce(to_address, sent_email_log):
                     print("aara bhai")
                     print(f"Bounced email detected for: {to_address}")
                     return True
+                if to_address in body and re.search(r"NXDOMAIN", body):
+                    print(f"Bounced email detected for DNS error (NXDOMAIN): {to_address}")
+                    return True
+                if to_address in body and re.search(r"550 5\.7\.1", body):
+                    print(f"Bounced email detected for 550 5.7.1 (message rejected): {to_address}")
+                    return True
+                if to_address in body and re.search(r"550 5\.1\.0", body):
+                    print(f"Bounced email detected for unknown recipient: {to_address}")
+                    return True
+                if to_address in body and re.search(r"550 5\.1\.2", body):
+                    print(f"Bounced email detected for mailbox not found: {to_address}")
+                    return True
+                if to_address in body and re.search(r"550 5\.1\.3", body):
+                    print(f"Bounced email detected for unavailable mailbox: {to_address}")
+                    return True
 
         return False
     except Exception as e:
@@ -249,24 +264,26 @@ if st.button("Send Emails"):
     # Move to the next batch
         x += BATCH_SIZE
         print(f"Batch completed, waiting 45 seconds...")
-        time.sleep(45)  # Wait time between batches    
+        time.sleep(5)  # Wait time between batches    
  
 
         # Output file for successful emails
-        output_df = pd.DataFrame(output_data)
-        output_file = "output_emails.csv"
-        output_df.to_csv(output_file, index=False)
+    output_df = pd.DataFrame(output_data)
+    output_file = "output_emails.csv"
+    output_df.to_csv(output_file, index=False)
 
-        st.write("Emails have been sent successfully. Below is the valid email list.")
-        st.write(output_df)
+    st.write("Emails have been sent successfully. Below is the valid email list.")
+    st.write(output_df)
 
-        # Download button for the result CSV
-        with open(output_file, "rb") as f:
+    # Download button for the result CSV
+    with open(output_file, "rb") as f:
+            
+            
             st.download_button(
                 label="Download Valid Emails CSV",
                 data=f,
                 file_name="valid_emails.csv",
                 mime="text/csv"
             )
-    else:
-        st.error("Please upload the CSV file and provide the email sender credentials.")
+else:
+    st.error("Please upload the CSV file and provide the email sender credentials.")
