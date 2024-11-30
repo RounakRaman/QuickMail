@@ -227,6 +227,8 @@ output_data = []
 if st.button("Send Emails"):
     sent_email_log = {}
     if uploaded_file and email_sender and password_1 and name_sender:
+        progress_bar = st.progress(0)
+        total_emails = len(df)
         
         
         # Handling the attachment
@@ -249,6 +251,7 @@ if st.button("Send Emails"):
 
     BATCH_SIZE = 1
     x = 0
+    emails_sent = 0  # Counter for sent emails
 
     while x < len(df):
         print(f"Processing batch starting at index {x}")
@@ -264,7 +267,10 @@ if st.button("Send Emails"):
                 futures.append(future)
         
             concurrent.futures.wait(futures)
-    
+            
+        emails_sent += len(batch)
+        progress_percentage = (emails_sent / total_emails) * 100
+        progress_bar.progress(int(progress_percentage))
     # Move to the next batch
         x += BATCH_SIZE
         print(f"Batch completed, waiting 45 seconds...")
