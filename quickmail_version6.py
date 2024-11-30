@@ -21,13 +21,7 @@ import google.generativeai as genai
 from datetime import datetime, timedelta
 from email.utils import parsedate_to_datetime
 import re 
-import json 
 
-if "current_index" not in st.session_state:
-    st.session_state.current_index = 0  # Tracks the current index in the email list
-if "is_running" not in st.session_state:
-    st.session_state.is_running = False  # Default to not running
-    
 SMTP_SERVER = 'smtp.gmail.com'
 SMTP_PORT = 587
 IMAP_SERVER = 'imap.gmail.com'
@@ -226,30 +220,26 @@ def process_row(row, attachment_package, sent_email_log):
 output_data = []
 
 # Process button for sending emails
-# Process button for sending emails
-if not st.session_state.is_running:
-    if st.button("Send Emails"):
-        st.session_state.is_running = True  # Mark as running
-        # Start processing emails here
-        st.write("Processing emails...")
-
-
-
-
-# Email sending logic
-    if st.session_state.is_running and uploaded_file and email_sender and password_1 and name_sender:
-        sent_email_log = {}
-        print("Hola")
+if st.button("Send Emails"):
+    sent_email_log = {}
+    if uploaded_file and email_sender and password_1 and name_sender:
+        
+        
         # Handling the attachment
+        
         if attachment_file is not None:
             filename = f"{name_sender}_Resume.pdf"
+            # Create the MIMEBase attachment package
             attachment_package = MIMEBase('application', 'octet-stream')
+            # Read the uploaded file's content
             attachment_package.set_payload(attachment_file.read())
+            # Encode the payload to base64
             encoders.encode_base64(attachment_package)
+            # Add appropriate header for the attachment
             attachment_package.add_header(
                 'Content-Disposition',
-                f'attachment; filename="{filename}"'
-            )
+                    f'attachment; filename="{filename}"'
+    )
         else:
             attachment_package = None  # No attachment if the file is not uploaded
 
@@ -274,36 +264,26 @@ if not st.session_state.is_running:
     # Move to the next batch
         x += BATCH_SIZE
         print(f"Batch completed, waiting 45 seconds...")
-        time.sleep(5)  # Wait time between batches    
+        time.sleep(45)  # Wait time between batches    
  
 
-        if st.session_state.current_index >= len(df):
-            st.session_state.is_running = False
-            st.write("All emails have been processed.")
-            # Output file for successful emails
-            output_df = pd.DataFrame(output_data)
-            output_file = "output_emails.csv"
-            output_df.to_csv(output_file, index=False)
+        # Output file for successful emails
+    output_df = pd.DataFrame(output_data)
+    output_file = "output_emails.csv"
+    output_df.to_csv(output_file, index=False)
 
-            st.write("Emails have been sent successfully. Below is the valid email list.")
-            st.write(output_df)
+    st.write("Emails have been sent successfully. Below is the valid email list.")
+    st.write(output_df)
 
-            # Download button for the result CSV
-            with open(output_file, "rb") as f:
-                st.download_button(
-                    label="Download Valid Emails CSV",
-                    data=f,
-                    file_name="valid_emails.csv",
-                    mime="text/csv"
-                )
+    # Download button for the result CSV
+    with open(output_file, "rb") as f:
+            
+            
+            st.download_button(
+                label="Download Valid Emails CSV",
+                data=f,
+                file_name="valid_emails.csv",
+                mime="text/csv"
+            )
 else:
-    # Show "Resume" and "Stop" buttons once emails have started
-    if st.button("Resume Sending Emails"):
-        st.session_state.is_running = True
-        st.write("Resuming email sending...")
-
-    if st.button("Stop Sending Emails"):
-        st.session_state.is_running = False
-        st.write("Email sending stopped.")                      
-
-
+    st.error("Please upload the CSV file and provide the email sender credentials.")
