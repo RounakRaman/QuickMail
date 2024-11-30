@@ -44,7 +44,7 @@ attachment_file = st.file_uploader('Upload your Resume/CV here: ', type=['pdf', 
 OUTPUT_FILE = "correctdatabase.csv"
 
 # CSV File Upload
-uploaded_file = st.file_uploader("Upload CSV File", type="csv")
+uploaded_file = st.file_uploader("Upload your Email database in CSV format: ", type="csv")
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
     st.write("Data Preview", df.head())
