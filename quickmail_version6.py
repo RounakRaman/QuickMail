@@ -228,7 +228,7 @@ if st.button("Send Emails"):
         else:
             attachment_package = None  # No attachment if the file is not uploaded
 
-        BATCH_SIZE = 5
+        BATCH_SIZE = 50
         x = 0
 
         while x < len(df):
