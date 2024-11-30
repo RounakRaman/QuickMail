@@ -228,23 +228,29 @@ if st.button("Send Emails"):
         else:
             attachment_package = None  # No attachment if the file is not uploaded
 
-        BATCH_SIZE = 50
-        x = 0
+    BATCH_SIZE = 5
+    x = 0
 
-        while x < len(df):
-            print(f"Processing batch starting at index {x}")
-            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-                batch = df.iloc[x:x + BATCH_SIZE]
-                futures = []
-                for _, row in df.iterrows():
-                    for _, row in batch.iterrows():
-                        future = executor.submit(process_row, row.to_dict(), attachment_package, sent_email_log)
-                        futures.append(future)
-
-                concurrent.futures.wait(futures)
-            x += BATCH_SIZE
-            print(f"Batch completed, waiting 60 seconds...")
-            time.sleep(5)    
+    while x < len(df):
+        print(f"Processing batch starting at index {x}")
+    
+        # Extract the current batch
+        batch = df.iloc[x:x + BATCH_SIZE]
+    
+        # Process the batch with ThreadPoolExecutor
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            futures = []
+            for _, row in batch.iterrows():  # Iterate only over the batch
+                future = executor.submit(process_row, row.to_dict(), attachment_package, sent_email_log)
+                futures.append(future)
+        
+            concurrent.futures.wait(futures)
+    
+    # Move to the next batch
+        x += BATCH_SIZE
+        print(f"Batch completed, waiting 60 seconds...")
+        time.sleep(60)  # Wait time between batches    
+ 
 
         # Output file for successful emails
         output_df = pd.DataFrame(output_data)
