@@ -169,6 +169,7 @@ def check_for_bounce(to_address, sent_email_log):
                 if to_address in body and re.search(r"550 5\.1\.0", body):
                     print(f"Bounced email detected for unknown recipient: {to_address}")
                     return True
+                
                 if to_address in body and re.search(r"550 5\.1\.2", body):
                     print(f"Bounced email detected for mailbox not found: {to_address}")
                     return True
@@ -226,9 +227,13 @@ output_data = []
 # Process button for sending emails
 if st.button("Send Emails"):
     sent_email_log = {}
+    progress_container = st.empty()  # Reserve space for the progress bar
+    percentage_container = st.empty()  # Reserve space for the percentage text
     if uploaded_file and email_sender and password_1 and name_sender:
-        progress_bar = st.progress(0)
-        total_emails = len(df)
+        progress_bar = progress_container.progress(0)  # Initialize the progress bar
+        total_emails = len(df)  # Total number of emails
+        emails_sent = 0  # Counter for sent emails
+        
         
         
         # Handling the attachment
@@ -251,7 +256,7 @@ if st.button("Send Emails"):
 
     BATCH_SIZE = 1
     x = 0
-    emails_sent = 0  # Counter for sent emails
+    
 
     while x < len(df):
         print(f"Processing batch starting at index {x}")
@@ -267,10 +272,11 @@ if st.button("Send Emails"):
                 futures.append(future)
         
             concurrent.futures.wait(futures)
-            
+
         emails_sent += len(batch)
         progress_percentage = (emails_sent / total_emails) * 100
         progress_bar.progress(int(progress_percentage))
+        percentage_container.write(f"Progress: {progress_percentage}%")
     # Move to the next batch
         x += BATCH_SIZE
         print(f"Batch completed, waiting 45 seconds...")
