@@ -228,7 +228,7 @@ if st.button("Send Emails"):
         else:
             attachment_package = None  # No attachment if the file is not uploaded
 
-    BATCH_SIZE = 5
+    BATCH_SIZE = 1
     x = 0
 
     while x < len(df):
@@ -238,7 +238,7 @@ if st.button("Send Emails"):
         batch = df.iloc[x:x + BATCH_SIZE]
     
         # Process the batch with ThreadPoolExecutor
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             futures = []
             for _, row in batch.iterrows():  # Iterate only over the batch
                 future = executor.submit(process_row, row.to_dict(), attachment_package, sent_email_log)
