@@ -210,14 +210,22 @@ if st.button("Send Emails"):
         
         
         # Handling the attachment
-        attachment_package = None
+        
         if attachment_file is not None:
             filename = f"{name_sender}_Resume.pdf"
-            with open(attachment_file, 'rb') as attachment_package:
-                attachment_package = MIMEBase('application', 'octet-stream')
-                attachment_package.set_payload(attachment_file.read())
-                encoders.encode_base64(attachment_package)
-                attachment_package.add_header('Content-Disposition', f"attachment; filename={filename}")
+            # Create the MIMEBase attachment package
+            attachment_package = MIMEBase('application', 'octet-stream')
+            # Read the uploaded file's content
+            attachment_package.set_payload(attachment_file.read())
+            # Encode the payload to base64
+            encoders.encode_base64(attachment_package)
+            # Add appropriate header for the attachment
+            attachment_package.add_header(
+                'Content-Disposition',
+                    f'attachment; filename="{filename}"'
+    )
+        else:
+            attachment_package = None  # No attachment if the file is not uploaded
 
         BATCH_SIZE = 1
         x = 0
