@@ -228,7 +228,7 @@ if st.button("Send Emails"):
         else:
             attachment_package = None  # No attachment if the file is not uploaded
 
-        BATCH_SIZE = 1
+        BATCH_SIZE = 5
         x = 0
 
         while x < len(df):
@@ -243,7 +243,7 @@ if st.button("Send Emails"):
 
                 concurrent.futures.wait(futures)
             x += BATCH_SIZE
-            print(f"Batch completed, waiting 5 seconds...")
+            print(f"Batch completed, waiting 60 seconds...")
             time.sleep(5)    
 
         # Output file for successful emails
