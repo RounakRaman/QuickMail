@@ -21,6 +21,7 @@ import google.generativeai as genai
 from datetime import datetime, timedelta
 from email.utils import parsedate_to_datetime
 import re 
+import json 
 
 SMTP_SERVER = 'smtp.gmail.com'
 SMTP_PORT = 587
@@ -221,68 +222,89 @@ output_data = []
 
 # Process button for sending emails
 if st.button("Send Emails"):
-    sent_email_log = {}
-    if uploaded_file and email_sender and password_1 and name_sender:
+    # Initialize session state variables
+    if "current_index" not in st.session_state:
+        st.session_state.current_index = 0  # Tracks the current index in the email list
+    if "is_running" not in st.session_state:
+        st.session_state.is_running = False  # Tracks whether the process is running
+
+        # Buttons for controlling the process
+    if st.button("Resume Sending Emails"):
+        st.session_state.is_running = True
+
+    if st.button("Stop Sending Emails"):
+        st.session_state.is_running = False
+    if st.session_state.is_running and uploaded_file and email_sender and password_1 and name_sender:    
+        sent_email_log = {}
+        if uploaded_file and email_sender and password_1 and name_sender:
         
         
         # Handling the attachment
         
-        if attachment_file is not None:
-            filename = f"{name_sender}_Resume.pdf"
-            # Create the MIMEBase attachment package
-            attachment_package = MIMEBase('application', 'octet-stream')
-            # Read the uploaded file's content
-            attachment_package.set_payload(attachment_file.read())
-            # Encode the payload to base64
-            encoders.encode_base64(attachment_package)
-            # Add appropriate header for the attachment
-            attachment_package.add_header(
-                'Content-Disposition',
-                    f'attachment; filename="{filename}"'
-    )
-        else:
-            attachment_package = None  # No attachment if the file is not uploaded
+            if attachment_file is not None:
+                filename = f"{name_sender}_Resume.pdf"
+                # Create the MIMEBase attachment package
+                attachment_package = MIMEBase('application', 'octet-stream')
+                # Read the uploaded file's content
+                attachment_package.set_payload(attachment_file.read())
+                # Encode the payload to base64
+                encoders.encode_base64(attachment_package)
+                # Add appropriate header for the attachment
+                attachment_package.add_header(
+                    'Content-Disposition',
+                        f'attachment; filename="{filename}"'
+                    )
+            else:
+                attachment_package = None  # No attachment if the file is not uploaded
 
-    BATCH_SIZE = 1
-    x = 0
+            BATCH_SIZE = 1
+   
 
-    while x < len(df):
-        print(f"Processing batch starting at index {x}")
+        while st.session_state.is_running and st.session_state.current_index < len(df):
+                print(f"Processing batch starting at index {x}")
     
-        # Extract the current batch
-        batch = df.iloc[x:x + BATCH_SIZE]
+            # Extract the current batch
+                batch = df.iloc[st.session_state.current_index:st.session_state.current_index + BATCH_SIZE]
     
-        # Process the batch with ThreadPoolExecutor
-        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-            futures = []
-            for _, row in batch.iterrows():  # Iterate only over the batch
-                future = executor.submit(process_row, row.to_dict(), attachment_package, sent_email_log)
-                futures.append(future)
+            # Process the batch with ThreadPoolExecutor
+                with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                    futures = []
+                    for _, row in batch.iterrows():  # Iterate only over the batch
+                        future = executor.submit(process_row, row.to_dict(), attachment_package, sent_email_log)
+                        futures.append(future)
         
-            concurrent.futures.wait(futures)
+                    concurrent.futures.wait(futures)
     
-    # Move to the next batch
-        x += BATCH_SIZE
-        print(f"Batch completed, waiting 45 seconds...")
-        time.sleep(45)  # Wait time between batches    
+            # Move to the next batch
+                x=st.session_state.current_index 
+                x += BATCH_SIZE
+                st.session_state.current_index = x
+                print(f"Batch completed, waiting 45 seconds...")
+                time.sleep(45)  # Wait time between batches 
+
+                temp_progress = {"current_index": st.session_state.current_index}
+                with open("progress.json", "w") as temp_file:
+                    json.dump(temp_progress, temp_file)   
  
+        if st.session_state.current_index >= len(df):
+            st.session_state.is_running = False
+            st.write("All emails have been processed.")
+            # Output file for successful emails
+            output_df = pd.DataFrame(output_data)
+            output_file = "output_emails.csv"
+            output_df.to_csv(output_file, index=False)
 
-        # Output file for successful emails
-    output_df = pd.DataFrame(output_data)
-    output_file = "output_emails.csv"
-    output_df.to_csv(output_file, index=False)
-
-    st.write("Emails have been sent successfully. Below is the valid email list.")
-    st.write(output_df)
+            st.write("Emails have been sent successfully. Below is the valid email list.")
+            st.write(output_df)
 
     # Download button for the result CSV
-    with open(output_file, "rb") as f:
+            with open(output_file, "rb") as f:
             
             
-            st.download_button(
-                label="Download Valid Emails CSV",
-                data=f,
-                file_name="valid_emails.csv",
-                mime="text/csv"
-            )
+                st.download_button(
+                    label="Download Valid Emails CSV",
+                    data=f,
+                    file_name="valid_emails.csv",
+                    mime="text/csv"
+                )
 
