@@ -38,8 +38,8 @@ st.title('QuickMail Email Sending Tool')
 name_sender = st.text_input("Enter Sender's Name :")
 email_sender = st.text_input('Enter Sender Email:')
 password_1 = st.text_input('Enter Email Password:', type="password")
-Mail_Content = st.text_area("Enter the content of the mail") 
-attachment_file = st.file_uploader('Upload Attachment (Optional)', type=['pdf', 'docx', 'jpg'])
+Mail_Content = st.text_area("Enter only the body of the mail here:") 
+attachment_file = st.file_uploader('Upload your Resume/CV here: ', type=['pdf', 'docx', 'jpg'])
 
 OUTPUT_FILE = "correctdatabase.csv"
 
@@ -212,7 +212,7 @@ if st.button("Send Emails"):
         # Handling the attachment
         attachment_package = None
         if attachment_file is not None:
-            filename = "Rounak_Raman_Resume.pdf"
+            filename = f"{name_sender}_Resume.pdf"
             with open(filename, 'rb') as attachment:
                 attachment_package = MIMEBase('application', 'octet-stream')
                 attachment_package.set_payload(attachment.read())
