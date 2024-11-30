@@ -232,15 +232,14 @@ if not st.session_state.is_running:
         st.session_state.is_running = True  # Mark as running
         # Start processing emails here
         st.write("Processing emails...")
-  
 
-    
 
 
 
 # Email sending logic
     if st.session_state.is_running and uploaded_file and email_sender and password_1 and name_sender:
         sent_email_log = {}
+        print("Hola")
         # Handling the attachment
         if attachment_file is not None:
             filename = f"{name_sender}_Resume.pdf"
@@ -259,6 +258,7 @@ if not st.session_state.is_running:
         # Start processing emails
         while st.session_state.is_running and st.session_state.current_index < len(df):
             # Extract the current batch
+            print("Hi")
             batch = df.iloc[st.session_state.current_index:st.session_state.current_index + BATCH_SIZE]
 
             # Process the batch with ThreadPoolExecutor
