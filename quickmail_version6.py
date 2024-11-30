@@ -228,19 +228,17 @@ output_data = []
 # Process button for sending emails
 # Process button for sending emails
 if st.button("Send Emails"):
-    # Initialize session state variables
-    if "current_index" not in st.session_state:
-        st.session_state.current_index = 0  # Tracks the current index in the email list
-    if "is_running" not in st.session_state:
-        st.session_state.is_running = True  # Start the process when "Send Emails" is clicked
-
-# Resume button to continue email processing
-if st.button("Resume Sending Emails"):
     st.session_state.is_running = True
 
+    
+
+# Resume button to continue email processing
+    if st.button("Resume Sending Emails"):
+        st.session_state.is_running = True
+
 # Stop button to pause email processing
-if st.button("Stop Sending Emails"):
-    st.session_state.is_running = False
+    if st.button("Stop Sending Emails"):
+        st.session_state.is_running = False
 
 # Email sending logic
     if st.session_state.is_running and uploaded_file and email_sender and password_1 and name_sender:
