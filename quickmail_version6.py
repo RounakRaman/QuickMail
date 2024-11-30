@@ -87,8 +87,9 @@ def send_email(receiver_email, name, relevant_field, attachment_package, company
         msg['Subject'] = getSubject(name, company)
         msg['From'] = formataddr((f"{name_sender}", email_sender))
         msg['To'] = receiver_email
+        processed_content = Mail_Content.format(name=name, company=company, field=relevant_field)
+        plain_text = f"Hi {name}\n\n{processed_content}\n\nBest Regards,\n{name_sender}\n"
 
-        plain_text = f"Hi {name}"+f"\n\n{Mail_Content}"+"\n\nBest Regards,\n{name_sender}\n"
 
         # html_content = f'''
         # <html>
