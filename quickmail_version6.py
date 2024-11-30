@@ -175,6 +175,9 @@ def check_for_bounce(to_address, sent_email_log):
                 if to_address in body and re.search(r"550 5\.1\.3", body):
                     print(f"Bounced email detected for unavailable mailbox: {to_address}")
                     return True
+                if to_address in body and re.search(r"552 5\.2\.2", body):
+                    print(f"Email inbox is full : {to_address}")
+                    return True
 
         return False
     except Exception as e:
@@ -192,6 +195,7 @@ def process_row(row, attachment_package, sent_email_log):
             relevant_field=relevant_field,
             attachment_package=attachment_package,
             company=row["Company name"]
+            
         )
         sent_email_log[row["emails"]] = datetime.now()  # Log the timestamp
 
@@ -287,3 +291,6 @@ if st.button("Send Emails"):
             )
 else:
     st.warning("Please upload the CSV file and provide the email sender credentials.")
+
+
+
