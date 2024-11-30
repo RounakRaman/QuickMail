@@ -232,15 +232,7 @@ if not st.session_state.is_running:
         st.session_state.is_running = True  # Mark as running
         # Start processing emails here
         st.write("Processing emails...")
-else:
-    # Show "Resume" and "Stop" buttons once emails have started
-    if st.button("Resume Sending Emails"):
-        st.session_state.is_running = True
-        st.write("Resuming email sending...")
-
-    if st.button("Stop Sending Emails"):
-        st.session_state.is_running = False
-        st.write("Email sending stopped.")        
+  
 
     
 
@@ -307,3 +299,14 @@ else:
                     file_name="valid_emails.csv",
                     mime="text/csv"
                 )
+else:
+    # Show "Resume" and "Stop" buttons once emails have started
+    if st.button("Resume Sending Emails"):
+        st.session_state.is_running = True
+        st.write("Resuming email sending...")
+
+    if st.button("Stop Sending Emails"):
+        st.session_state.is_running = False
+        st.write("Email sending stopped.")                      
+
+
