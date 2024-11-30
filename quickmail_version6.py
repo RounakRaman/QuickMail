@@ -253,32 +253,29 @@ if not st.session_state.is_running:
         else:
             attachment_package = None  # No attachment if the file is not uploaded
 
-        BATCH_SIZE = 1
+    BATCH_SIZE = 1
+    x = 0
 
-        # Start processing emails
-        while st.session_state.is_running and st.session_state.current_index < len(df):
-            # Extract the current batch
-            print("Hi")
-            batch = df.iloc[st.session_state.current_index:st.session_state.current_index + BATCH_SIZE]
-
-            # Process the batch with ThreadPoolExecutor
-            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-                futures = []
-                for _, row in batch.iterrows():
-                    future = executor.submit(process_row, row.to_dict(), attachment_package, sent_email_log)
-                    futures.append(future)
-
-                concurrent.futures.wait(futures)
-
-            # Update index for the next batch
-            st.session_state.current_index += BATCH_SIZE
-            print(f"Processed batch, waiting 45 seconds...")
-            time.sleep(45)  # Wait time between batches
-
-            # Save progress to a JSON file
-            temp_progress = {"current_index": st.session_state.current_index}
-            with open("progress.json", "w") as temp_file:
-                json.dump(temp_progress, temp_file)
+    while x < len(df):
+        print(f"Processing batch starting at index {x}")
+    
+        # Extract the current batch
+        batch = df.iloc[x:x + BATCH_SIZE]
+    
+        # Process the batch with ThreadPoolExecutor
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            futures = []
+            for _, row in batch.iterrows():  # Iterate only over the batch
+                future = executor.submit(process_row, row.to_dict(), attachment_package, sent_email_log)
+                futures.append(future)
+        
+            concurrent.futures.wait(futures)
+    
+    # Move to the next batch
+        x += BATCH_SIZE
+        print(f"Batch completed, waiting 45 seconds...")
+        time.sleep(5)  # Wait time between batches    
+ 
 
         if st.session_state.current_index >= len(df):
             st.session_state.is_running = False
