@@ -264,7 +264,7 @@ if st.button("Send Emails"):
     # Move to the next batch
         x += BATCH_SIZE
         print(f"Batch completed, waiting 45 seconds...")
-        time.sleep(5)  # Wait time between batches    
+        time.sleep(45)  # Wait time between batches    
  
 
         # Output file for successful emails
