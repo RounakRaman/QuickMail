@@ -285,5 +285,4 @@ if st.button("Send Emails"):
                 file_name="valid_emails.csv",
                 mime="text/csv"
             )
-else:
-    st.error("Please upload the CSV file and provide the email sender credentials.")
+
