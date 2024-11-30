@@ -227,18 +227,24 @@ output_data = []
 
 # Process button for sending emails
 # Process button for sending emails
-if st.button("Send Emails"):
-    st.session_state.is_running = True
+if not st.session_state.is_running:
+    if st.button("Send Emails"):
+        st.session_state.is_running = True  # Mark as running
+        # Start processing emails here
+        st.write("Processing emails...")
+else:
+    # Show "Resume" and "Stop" buttons once emails have started
+    if st.button("Resume Sending Emails"):
+        st.session_state.is_running = True
+        st.write("Resuming email sending...")
+
+    if st.button("Stop Sending Emails"):
+        st.session_state.is_running = False
+        st.write("Email sending stopped.")        
 
     
 
-# Resume button to continue email processing
-    if st.button("Resume Sending Emails"):
-        st.session_state.is_running = True
 
-# Stop button to pause email processing
-    if st.button("Stop Sending Emails"):
-        st.session_state.is_running = False
 
 # Email sending logic
     if st.session_state.is_running and uploaded_file and email_sender and password_1 and name_sender:
