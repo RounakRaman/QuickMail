@@ -233,7 +233,7 @@ if st.button("Send Emails"):
 
         while x < len(df):
             print(f"Processing batch starting at index {x}")
-            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
                 batch = df.iloc[x:x + BATCH_SIZE]
                 futures = []
                 for _, row in df.iterrows():
