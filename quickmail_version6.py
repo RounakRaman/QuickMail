@@ -23,6 +23,11 @@ from email.utils import parsedate_to_datetime
 import re 
 import json 
 
+if "current_index" not in st.session_state:
+    st.session_state.current_index = 0  # Tracks the current index in the email list
+if "is_running" not in st.session_state:
+    st.session_state.is_running = False  # Default to not running
+    
 SMTP_SERVER = 'smtp.gmail.com'
 SMTP_PORT = 587
 IMAP_SERVER = 'imap.gmail.com'
@@ -238,63 +243,63 @@ if st.button("Stop Sending Emails"):
     st.session_state.is_running = False
 
 # Email sending logic
-if st.session_state.is_running and uploaded_file and email_sender and password_1 and name_sender:
-    sent_email_log = {}
-    # Handling the attachment
-    if attachment_file is not None:
-        filename = f"{name_sender}_Resume.pdf"
-        attachment_package = MIMEBase('application', 'octet-stream')
-        attachment_package.set_payload(attachment_file.read())
-        encoders.encode_base64(attachment_package)
-        attachment_package.add_header(
-            'Content-Disposition',
-            f'attachment; filename="{filename}"'
-        )
-    else:
-        attachment_package = None  # No attachment if the file is not uploaded
-
-    BATCH_SIZE = 1
-
-    # Start processing emails
-    while st.session_state.is_running and st.session_state.current_index < len(df):
-        # Extract the current batch
-        batch = df.iloc[st.session_state.current_index:st.session_state.current_index + BATCH_SIZE]
-
-        # Process the batch with ThreadPoolExecutor
-        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-            futures = []
-            for _, row in batch.iterrows():
-                future = executor.submit(process_row, row.to_dict(), attachment_package, sent_email_log)
-                futures.append(future)
-
-            concurrent.futures.wait(futures)
-
-        # Update index for the next batch
-        st.session_state.current_index += BATCH_SIZE
-        print(f"Processed batch, waiting 45 seconds...")
-        time.sleep(45)  # Wait time between batches
-
-        # Save progress to a JSON file
-        temp_progress = {"current_index": st.session_state.current_index}
-        with open("progress.json", "w") as temp_file:
-            json.dump(temp_progress, temp_file)
-
-    if st.session_state.current_index >= len(df):
-        st.session_state.is_running = False
-        st.write("All emails have been processed.")
-        # Output file for successful emails
-        output_df = pd.DataFrame(output_data)
-        output_file = "output_emails.csv"
-        output_df.to_csv(output_file, index=False)
-
-        st.write("Emails have been sent successfully. Below is the valid email list.")
-        st.write(output_df)
-
-        # Download button for the result CSV
-        with open(output_file, "rb") as f:
-            st.download_button(
-                label="Download Valid Emails CSV",
-                data=f,
-                file_name="valid_emails.csv",
-                mime="text/csv"
+    if st.session_state.is_running and uploaded_file and email_sender and password_1 and name_sender:
+        sent_email_log = {}
+        # Handling the attachment
+        if attachment_file is not None:
+            filename = f"{name_sender}_Resume.pdf"
+            attachment_package = MIMEBase('application', 'octet-stream')
+            attachment_package.set_payload(attachment_file.read())
+            encoders.encode_base64(attachment_package)
+            attachment_package.add_header(
+                'Content-Disposition',
+                f'attachment; filename="{filename}"'
             )
+        else:
+            attachment_package = None  # No attachment if the file is not uploaded
+
+        BATCH_SIZE = 1
+
+        # Start processing emails
+        while st.session_state.is_running and st.session_state.current_index < len(df):
+            # Extract the current batch
+            batch = df.iloc[st.session_state.current_index:st.session_state.current_index + BATCH_SIZE]
+
+            # Process the batch with ThreadPoolExecutor
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                futures = []
+                for _, row in batch.iterrows():
+                    future = executor.submit(process_row, row.to_dict(), attachment_package, sent_email_log)
+                    futures.append(future)
+
+                concurrent.futures.wait(futures)
+
+            # Update index for the next batch
+            st.session_state.current_index += BATCH_SIZE
+            print(f"Processed batch, waiting 45 seconds...")
+            time.sleep(45)  # Wait time between batches
+
+            # Save progress to a JSON file
+            temp_progress = {"current_index": st.session_state.current_index}
+            with open("progress.json", "w") as temp_file:
+                json.dump(temp_progress, temp_file)
+
+        if st.session_state.current_index >= len(df):
+            st.session_state.is_running = False
+            st.write("All emails have been processed.")
+            # Output file for successful emails
+            output_df = pd.DataFrame(output_data)
+            output_file = "output_emails.csv"
+            output_df.to_csv(output_file, index=False)
+
+            st.write("Emails have been sent successfully. Below is the valid email list.")
+            st.write(output_df)
+
+            # Download button for the result CSV
+            with open(output_file, "rb") as f:
+                st.download_button(
+                    label="Download Valid Emails CSV",
+                    data=f,
+                    file_name="valid_emails.csv",
+                    mime="text/csv"
+                )
