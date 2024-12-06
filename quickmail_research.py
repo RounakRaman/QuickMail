@@ -21,6 +21,7 @@ import google.generativeai as genai
 from datetime import datetime, timedelta
 from email.utils import parsedate_to_datetime
 import re 
+import base64
 
 SMTP_SERVER = 'smtp.gmail.com'
 SMTP_PORT = 587
@@ -44,10 +45,18 @@ attachment_file = st.file_uploader('Upload your Resume/CV here: ', type=['pdf', 
 OUTPUT_FILE = "correctdatabase.csv"
 
 # CSV File Upload
-uploaded_file = st.file_uploader("Upload your Email database in CSV format: ", type="csv")
+uploaded_file = st.file_uploader("Upload your Email database in Excel/CSV format: ", type=['xlsx','csv'])
 if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file)
-    st.write("Data Preview", df.head())
+    file_extension = uploaded_file.name.split('.')[-1].lower()  # Extract file extension
+    if file_extension in ['xls', 'xlsx']:
+        st.write("This is an Excel file.")
+        df = pd.read_excel(uploaded_file)
+        st.write(df.head())  # Preview the content
+    else:
+        df = pd.read_csv(uploaded_file)
+        st.write(df.head())
+
+    
 
 # Function to get subject and relevant field
 def getRelevantField(company):
@@ -65,30 +74,35 @@ def getRelevantField(company):
         print(f"Error getting relevant field: {e}")
         return "technology and data solutions"
 
-def getSubject(name, company):
-    try:
-        model = genai.GenerativeModel("gemini-1.0-pro")  # Using the correct model
-        response = model.generate_content(
-            f"Please generate a formal and concise email subject line that addresses {name} and requests a referral for open positions at {company}.",
-            generation_config=genai.types.GenerationConfig(
-                max_output_tokens=12,
-                temperature=1.0,
-            )
-        )
-        return response.text
-    except Exception as e:
-        print(f"Error getting subject: {e}")
+# def getSubject(name, company):
+#     try:
+#         model = genai.GenerativeModel("gemini-1.0-pro")  # Using the correct model
+#         response = model.generate_content(
+#             f"Application for EPFL Summer Internship under Professor {name} in Data Management and Information Retrieval domain",
+#             generation_config=genai.types.GenerationConfig(
+#                 max_output_tokens=12,
+#                 temperature=1.0,
+#             )
+#         )
+#         return response.text
+#     except Exception as e:
+#         print(f"Error getting subject: {e}")
         return f"Referral Request for {company}"
+
+def sanitize_header(value):
+    return value.replace("\n", "").replace("\r", "").strip()
+
 
 # Function to send email
 def send_email(receiver_email, name, relevant_field, attachment_package, company):
     try:
         msg = EmailMessage()
-        msg['Subject'] = f"Hi {name},Could you please refer me to open positions at {company}?"
-        msg['From'] = formataddr((f"{name_sender}", email_sender))
-        msg['To'] = receiver_email
+        msg['Subject'] = sanitize_header(f"Application for EPFL Summer Internship under Professor {name} in Natural Language Processing domain")
+        msg['From'] = sanitize_header(formataddr((name_sender, email_sender)))
+        msg['To'] = sanitize_header(receiver_email)
+
         processed_content = Mail_Content.format(name=name, company=company, field=relevant_field)
-        plain_text = f"Hi {name}\n\n{processed_content}\n\nBest Regards,\n{name_sender}\n"
+        plain_text = f"Dear Professor {name}\n\n{processed_content}\n\nBest Regards,\n{name_sender}\n+91-8826879389 | raman.rounak@gmail.com\nhttps://www.linkedin.com/in/rounak-raman/"
 
 
         # html_content = f'''
@@ -290,7 +304,7 @@ if st.button("Send Emails"):
 
     st.write("Emails have been sent successfully. Below is the valid email list.")
     st.write(output_df)
-
+    
     # Download button for the result CSV
     with open(output_file, "rb") as f:
             
