@@ -33,7 +33,7 @@ API_KEY = os.getenv("API")
 genai.configure(api_key=API_KEY)
 
 # Streamlit UI elements
-st.title('QuickMail Email Sending Tool')
+st.title('QuickMail Email Sending Tool (Research Internship)')
 
 # Email credentials
 name_sender = st.text_input("Enter Sender's Name :")
