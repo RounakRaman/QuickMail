@@ -94,15 +94,15 @@ def sanitize_header(value):
 
 
 # Function to send email
-def send_email(receiver_email, name, relevant_field, attachment_package, company):
+def send_email(receiver_email, name, relevant_field, attachment_package, company,dept_name):
     try:
         msg = EmailMessage()
-        msg['Subject'] = sanitize_header(f"Application for EPFL Summer Internship under Professor {name} in Natural Language Processing domain")
+        msg['Subject'] = sanitize_header(f"Interested to work as a research intern at {dept_name} department at {company}")
         msg['From'] = sanitize_header(formataddr((name_sender, email_sender)))
         msg['To'] = sanitize_header(receiver_email)
 
         processed_content = Mail_Content.format(name=name, company=company, field=relevant_field)
-        plain_text = f"Dear Professor {name}\n\n{processed_content}\n\nBest Regards,\n{name_sender}\n+91-8826879389 | raman.rounak@gmail.com\nhttps://www.linkedin.com/in/rounak-raman/"
+        plain_text = f"Dear Professor {name}\n\n{processed_content}\n\nBest Regards,\n{name_sender}\n"
 
 
         # html_content = f'''
@@ -207,6 +207,7 @@ def process_row(row, attachment_package, sent_email_log):
         send_email(
             receiver_email=row["emails"],
             name=row["Name"],
+            dept_name=row["department"],
             relevant_field=relevant_field,
             attachment_package=attachment_package,
             company=row["Company name"]
