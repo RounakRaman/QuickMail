@@ -102,7 +102,7 @@ def send_email(receiver_email, name, relevant_field, attachment_package, company
         msg['To'] = sanitize_header(receiver_email)
 
         processed_content = Mail_Content.format(name=name, company=company, field=relevant_field)
-        plain_text = f"Dear Professor {name}\n\n{processed_content}\n\nBest Regards,\n{name_sender}\n"
+        plain_text = f"Respected Professor {name}\n\n{processed_content}\n\nBest Regards,\n{name_sender}\n"
 
 
         # html_content = f'''
