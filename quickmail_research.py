@@ -33,7 +33,7 @@ API_KEY = os.getenv("API")
 genai.configure(api_key=API_KEY)
 
 # Streamlit UI elements
-st.title('QuickMail Email Sending Tool (Research Internship)')
+st.title('Beyond Tech Promo Mail Sender')
 
 # Email credentials
 name_sender = st.text_input("Enter Sender's Name :")
@@ -94,15 +94,15 @@ def sanitize_header(value):
 
 
 # Function to send email
-def send_email(receiver_email, name, relevant_field, attachment_package, company,dept_name):
+def send_email(receiver_email, name, relevant_field, attachment_package,dept_name):
     try:
         msg = EmailMessage()
-        msg['Subject'] = sanitize_header(f"Interested to work as a research intern at {dept_name} department at {company}")
+        msg['Subject'] = sanitize_header(f"{name},are you Nervous About Placement Season? Don't worry we are here to help!")
         msg['From'] = sanitize_header(formataddr((name_sender, email_sender)))
         msg['To'] = sanitize_header(receiver_email)
 
-        processed_content = Mail_Content.format(name=name, company=company, field=relevant_field)
-        plain_text = f"Respected Professor {name}\n\n{processed_content}\n\nBest Regards,\n{name_sender}\n"
+        processed_content = Mail_Content.format(name=name,field=relevant_field)
+        plain_text = f"Dear {name},\n\n{processed_content}\n\nBest Regards,\n{name_sender}\n"
 
 
         # html_content = f'''
@@ -210,8 +210,7 @@ def process_row(row, attachment_package, sent_email_log):
             dept_name=row["department"],
             relevant_field=relevant_field,
             attachment_package=attachment_package,
-            company=row["Company name"]
-            
+                     
         )
         sent_email_log[row["emails"]] = datetime.now()  # Log the timestamp
 
