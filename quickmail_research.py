@@ -94,7 +94,7 @@ def sanitize_header(value):
 
 
 # Function to send email
-def send_email(receiver_email, name, relevant_field, attachment_package,dept_name):
+def send_email(receiver_email, name, relevant_field, attachment_package):
     try:
         msg = EmailMessage()
         msg['Subject'] = sanitize_header(f"{name},are you Nervous About Placement Season? Don't worry we are here to help!")
@@ -135,69 +135,69 @@ def send_email(receiver_email, name, relevant_field, attachment_package,dept_nam
     except Exception as e:
         print(f"Error sending email: {e}")
 
-def check_for_bounce(to_address, sent_email_log):
-    """
-    Check if an email to a specific address bounced based on the subject line and body.
+# def check_for_bounce(to_address, sent_email_log):
+#     """
+#     Check if an email to a specific address bounced based on the subject line and body.
 
-    Arguments:
-    - to_address: The recipient email address to check.
-    - sent_email_log: A dictionary of sent emails with timestamps or IDs.
+#     Arguments:
+#     - to_address: The recipient email address to check.
+#     - sent_email_log: A dictionary of sent emails with timestamps or IDs.
 
-    Returns:
-    - True if a bounce is detected for the given address, False otherwise.
-    """
-    try:
-        with imaplib.IMAP4_SSL(IMAP_SERVER) as mail:
-            mail.login(email_sender, password_1)
-            mail.select('inbox')
+#     Returns:
+#     - True if a bounce is detected for the given address, False otherwise.
+#     """
+#     try:
+#         with imaplib.IMAP4_SSL(IMAP_SERVER) as mail:
+#             mail.login(email_sender, password_1)
+#             mail.select('inbox')
 
-            # Search for bounce emails
-            status, data = mail.search(None, '(FROM "mailer-daemon" SUBJECT "Delivery Status Notification (Failure)")')
-            if status != 'OK' or not data[0]:
-                print("kyu hai bhai tu")
-                return False  # No bounce emails found
+#             # Search for bounce emails
+#             status, data = mail.search(None, '(FROM "mailer-daemon" SUBJECT "Delivery Status Notification (Failure)")')
+#             if status != 'OK' or not data[0]:
+#                 print("kyu hai bhai tu")
+#                 return False  # No bounce emails found
 
-            for num in data[0].split():
-                status, msg_data = mail.fetch(num, '(RFC822)')
-                if status != 'OK':
-                    print("kaisa hai bhai")
-                    continue  # Skip if fetching fails
+#             for num in data[0].split():
+#                 status, msg_data = mail.fetch(num, '(RFC822)')
+#                 if status != 'OK':
+#                     print("kaisa hai bhai")
+#                     continue  # Skip if fetching fails
 
-                # Parse the email to extract the subject, date, and body
-                msg = BytesParser(policy=policy.default).parsebytes(msg_data[0][1])
-                subject = msg['Subject']
-                received_date = msg['Date']
-                body = msg.get_body(preferencelist=('plain')).get_payload(decode=True).decode()
+#                 # Parse the email to extract the subject, date, and body
+#                 msg = BytesParser(policy=policy.default).parsebytes(msg_data[0][1])
+#                 subject = msg['Subject']
+#                 received_date = msg['Date']
+#                 body = msg.get_body(preferencelist=('plain')).get_payload(decode=True).decode()
 
-                # Check if the bounce contains the address and invalid message
-                if to_address in body and re.search(r"550 5\.1\.1", body):
-                    print("aara bhai")
-                    print(f"Bounced email detected for: {to_address}")
-                    return True
-                if to_address in body and re.search(r"NXDOMAIN", body):
-                    print(f"Bounced email detected for DNS error (NXDOMAIN): {to_address}")
-                    return True
-                if to_address in body and re.search(r"550 5\.7\.1", body):
-                    print(f"Bounced email detected for 550 5.7.1 (message rejected): {to_address}")
-                    return True
-                if to_address in body and re.search(r"550 5\.1\.0", body):
-                    print(f"Bounced email detected for unknown recipient: {to_address}")
-                    return True
+#                 # Check if the bounce contains the address and invalid message
+#                 if to_address in body and re.search(r"550 5\.1\.1", body):
+#                     print("aara bhai")
+#                     print(f"Bounced email detected for: {to_address}")
+#                     return True
+#                 if to_address in body and re.search(r"NXDOMAIN", body):
+#                     print(f"Bounced email detected for DNS error (NXDOMAIN): {to_address}")
+#                     return True
+#                 if to_address in body and re.search(r"550 5\.7\.1", body):
+#                     print(f"Bounced email detected for 550 5.7.1 (message rejected): {to_address}")
+#                     return True
+#                 if to_address in body and re.search(r"550 5\.1\.0", body):
+#                     print(f"Bounced email detected for unknown recipient: {to_address}")
+#                     return True
                 
-                if to_address in body and re.search(r"550 5\.1\.2", body):
-                    print(f"Bounced email detected for mailbox not found: {to_address}")
-                    return True
-                if to_address in body and re.search(r"550 5\.1\.3", body):
-                    print(f"Bounced email detected for unavailable mailbox: {to_address}")
-                    return True
-                if to_address in body and re.search(r"552 5\.2\.2", body):
-                    print(f"Email inbox is full : {to_address}")
-                    return True
+#                 if to_address in body and re.search(r"550 5\.1\.2", body):
+#                     print(f"Bounced email detected for mailbox not found: {to_address}")
+#                     return True
+#                 if to_address in body and re.search(r"550 5\.1\.3", body):
+#                     print(f"Bounced email detected for unavailable mailbox: {to_address}")
+#                     return True
+#                 if to_address in body and re.search(r"552 5\.2\.2", body):
+#                     print(f"Email inbox is full : {to_address}")
+#                     return True
 
-        return False
-    except Exception as e:
-        print(f"Error checking bounce for {to_address}: {e}")
-        return False        
+#         return False
+#     except Exception as e:
+#         print(f"Error checking bounce for {to_address}: {e}")
+#         return False        
 
 # Function to process each row in CSV and send emails
 def process_row(row, attachment_package, sent_email_log):
@@ -207,7 +207,6 @@ def process_row(row, attachment_package, sent_email_log):
         send_email(
             receiver_email=row["emails"],
             name=row["Name"],
-            dept_name=row["department"],
             relevant_field=relevant_field,
             attachment_package=attachment_package,
                      
@@ -218,14 +217,14 @@ def process_row(row, attachment_package, sent_email_log):
         time.sleep(1)
         st.write(f"Email sent successfully to: {row['emails']}")
 
-        if not check_for_bounce(row["emails"], sent_email_log):  # Check bounce using sent_email_log
-            output_data.append({"Name": row["Name"], "Company name": row["Company name"], "emails": row["emails"]})
+        # if not check_for_bounce(row["emails"], sent_email_log):  # Check bounce using sent_email_log
+        #     output_data.append({"Name": row["Name"], "Company name": row["Company name"], "emails": row["emails"]})
             
-            with open(OUTPUT_FILE, "a") as f:
-                f.write(f"{row['Name']},{row['Company name']},{row['emails']}\n")
-            print(f"Email validated for {row['emails']}")
-        else:
-            print(f"Email invalid: {row['emails']}")
+        #     with open(OUTPUT_FILE, "a") as f:
+        #         f.write(f"{row['Name']},{row['Company name']},{row['emails']}\n")
+        #     print(f"Email validated for {row['emails']}")
+        # else:
+        #     print(f"Email invalid: {row['emails']}")
 
     except Exception as e:
         print(f"Error processing row: {e}")
