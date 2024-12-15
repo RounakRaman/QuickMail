@@ -13,19 +13,17 @@ from email.message import EmailMessage
 from email.utils import formataddr
 import pandas as pd
 import concurrent.futures
-import time
 from dotenv import load_dotenv
 import os
-import google.generativeai as genai 
-#import winsound 
-from datetime import datetime, timedelta
-from email.utils import parsedate_to_datetime
-import re 
+import google.generativeai as genai
+from datetime import datetime
 import base64
 
+# Constants
 SMTP_SERVER = 'smtp.gmail.com'
 SMTP_PORT = 587
 IMAP_SERVER = 'imap.gmail.com'
+OUTPUT_FILE = "correctdatabase.csv"
 
 # Load environment variables
 load_dotenv()
@@ -42,26 +40,33 @@ password_1 = st.text_input('Enter Email Password:', type="password")
 Mail_Content = st.text_area("Enter only the body of the mail here:") 
 attachment_file = st.file_uploader('Upload your Resume/CV here: ', type=['pdf', 'docx', 'jpg'])
 
-OUTPUT_FILE = "correctdatabase.csv"
+# Caching uploaded files and email databases
+@st.cache_data
+def load_file(uploaded_file):
+    file_extension = uploaded_file.name.split('.')[-1].lower()
+    if file_extension in ['xls', 'xlsx']:
+        return pd.read_excel(uploaded_file)
+    return pd.read_csv(uploaded_file)
+
+@st.cache_data
+def cache_attachment(file_data, file_name):
+    attachment = MIMEBase('application', 'octet-stream')
+    attachment.set_payload(file_data)
+    encoders.encode_base64(attachment)
+    attachment.add_header('Content-Disposition', f'attachment; filename="{file_name}"')
+    return attachment
 
 # CSV File Upload
-uploaded_file = st.file_uploader("Upload your Email database in Excel/CSV format: ", type=['xlsx','csv'])
+uploaded_file = st.file_uploader("Upload your Email database in Excel/CSV format: ", type=['xlsx', 'csv'])
 if uploaded_file is not None:
-    file_extension = uploaded_file.name.split('.')[-1].lower()  # Extract file extension
-    if file_extension in ['xls', 'xlsx']:
-        st.write("This is an Excel file.")
-        df = pd.read_excel(uploaded_file)
-        st.write(df.head())  # Preview the content
-    else:
-        df = pd.read_csv(uploaded_file)
-        st.write(df.head())
+    df = load_file(uploaded_file)
+    st.write(df.head())  # Preview the content
 
-    
-
-# Function to get subject and relevant field
+# Function to get relevant field from GenAI
+@st.cache_data
 def getRelevantField(company):
     try:
-        model = genai.GenerativeModel("gemini-1.0-pro")  # Using the correct model
+        model = genai.GenerativeModel("gemini-1.0-pro")
         response = model.generate_content(
             f"What is the relevant field in which the {company} is working? Mention only the prominent field in short",
             generation_config=genai.types.GenerationConfig(
@@ -74,55 +79,23 @@ def getRelevantField(company):
         print(f"Error getting relevant field: {e}")
         return "technology and data solutions"
 
-# def getSubject(name, company):
-#     try:
-#         model = genai.GenerativeModel("gemini-1.0-pro")  # Using the correct model
-#         response = model.generate_content(
-#             f"Application for EPFL Summer Internship under Professor {name} in Data Management and Information Retrieval domain",
-#             generation_config=genai.types.GenerationConfig(
-#                 max_output_tokens=12,
-#                 temperature=1.0,
-#             )
-#         )
-#         return response.text
-#     except Exception as e:
-#         print(f"Error getting subject: {e}")
-        return f"Referral Request for {company}"
-
+# Sanitize email headers
+@st.cache_data
 def sanitize_header(value):
     return value.replace("\n", "").replace("\r", "").strip()
-
 
 # Function to send email
 def send_email(receiver_email, name, relevant_field, attachment_package):
     try:
         msg = EmailMessage()
-        msg['Subject'] = sanitize_header(f"{name},are you Nervous About Placement Season? Don't worry we are here to help!")
+        msg['Subject'] = sanitize_header(f"{name}, are you Nervous About Placement Season? Don't worry we are here to help!")
         msg['From'] = sanitize_header(formataddr((name_sender, email_sender)))
         msg['To'] = sanitize_header(receiver_email)
 
-        processed_content = Mail_Content.format(name=name,field=relevant_field)
+        processed_content = Mail_Content.format(name=name, field=relevant_field)
         plain_text = f"Dear {name},\n\n{processed_content}\n\nBest Regards,\n{name_sender}\n"
-
-
-        # html_content = f'''
-        # <html>
-        # <body>
-        #     <p>Hi {name},</p>
-        #     <p>I hope you're doing well! I'm <strong>Rounak Raman</strong>, a final-year student at NSUT doing my major in Information Technology with experience in data analysis, machine learning, and project management. My recent work includes developing predictive models for cognitive disability analysis at <strong>DRDO-INMAS</strong> and creating an air quality dashboard to reduce pollution levels in Delhi during my internship at <strong>Nation With Namo</strong>.</p>
-        #     <p>I admire your company's focus on <strong>{relevant_field}</strong>. The innovative approaches your team employs in <strong>{relevant_field}</strong> resonate with my interests and career aspirations. I believe contributing to such impactful work would be a fantastic opportunity for growth and learning.</p>
-        #     <p>With skills in <strong>Python, SQL, Power BI, and end-to-end ML pipelines</strong> along with product management skills, I am confident in my ability to add value to your team. My projects on global economic indicators and air quality analysis highlight my ability to solve real-world challenges through data-driven solutions.</p>
-        #     <p>If you could kindly refer me for a relevant opportunity at your organization, I would be deeply grateful.</p>
-        #     <p>Thank you for considering my request! I look forward to the chance to collaborate.</p>
-        #     <p>Best regards,</p>
-        #     <p><strong>Rounak Raman</strong></p>
-        #     <p>+91-8826879389</p>
-        # </body>
-        # </html>
-        # '''
-        
         msg.set_content(plain_text)
-        #msg.add_alternative(html_content, subtype="html")
+
         if attachment_package:
             msg.add_attachment(attachment_package.get_payload(decode=True), maintype='application', subtype='octet-stream', filename=attachment_package.get_filename())
 
@@ -131,73 +104,8 @@ def send_email(receiver_email, name, relevant_field, attachment_package):
             connection.send_message(msg)
 
         print(f"Email successfully sent to {receiver_email}")
-#        winsound.Beep(1000, 1000)  # Frequency 1000Hz, duration 500ms
     except Exception as e:
         print(f"Error sending email: {e}")
-
-# def check_for_bounce(to_address, sent_email_log):
-#     """
-#     Check if an email to a specific address bounced based on the subject line and body.
-
-#     Arguments:
-#     - to_address: The recipient email address to check.
-#     - sent_email_log: A dictionary of sent emails with timestamps or IDs.
-
-#     Returns:
-#     - True if a bounce is detected for the given address, False otherwise.
-#     """
-#     try:
-#         with imaplib.IMAP4_SSL(IMAP_SERVER) as mail:
-#             mail.login(email_sender, password_1)
-#             mail.select('inbox')
-
-#             # Search for bounce emails
-#             status, data = mail.search(None, '(FROM "mailer-daemon" SUBJECT "Delivery Status Notification (Failure)")')
-#             if status != 'OK' or not data[0]:
-#                 print("kyu hai bhai tu")
-#                 return False  # No bounce emails found
-
-#             for num in data[0].split():
-#                 status, msg_data = mail.fetch(num, '(RFC822)')
-#                 if status != 'OK':
-#                     print("kaisa hai bhai")
-#                     continue  # Skip if fetching fails
-
-#                 # Parse the email to extract the subject, date, and body
-#                 msg = BytesParser(policy=policy.default).parsebytes(msg_data[0][1])
-#                 subject = msg['Subject']
-#                 received_date = msg['Date']
-#                 body = msg.get_body(preferencelist=('plain')).get_payload(decode=True).decode()
-
-#                 # Check if the bounce contains the address and invalid message
-#                 if to_address in body and re.search(r"550 5\.1\.1", body):
-#                     print("aara bhai")
-#                     print(f"Bounced email detected for: {to_address}")
-#                     return True
-#                 if to_address in body and re.search(r"NXDOMAIN", body):
-#                     print(f"Bounced email detected for DNS error (NXDOMAIN): {to_address}")
-#                     return True
-#                 if to_address in body and re.search(r"550 5\.7\.1", body):
-#                     print(f"Bounced email detected for 550 5.7.1 (message rejected): {to_address}")
-#                     return True
-#                 if to_address in body and re.search(r"550 5\.1\.0", body):
-#                     print(f"Bounced email detected for unknown recipient: {to_address}")
-#                     return True
-                
-#                 if to_address in body and re.search(r"550 5\.1\.2", body):
-#                     print(f"Bounced email detected for mailbox not found: {to_address}")
-#                     return True
-#                 if to_address in body and re.search(r"550 5\.1\.3", body):
-#                     print(f"Bounced email detected for unavailable mailbox: {to_address}")
-#                     return True
-#                 if to_address in body and re.search(r"552 5\.2\.2", body):
-#                     print(f"Email inbox is full : {to_address}")
-#                     return True
-
-#         return False
-#     except Exception as e:
-#         print(f"Error checking bounce for {to_address}: {e}")
-#         return False        
 
 # Function to process each row in CSV and send emails
 def process_row(row, attachment_package, sent_email_log):
@@ -209,113 +117,49 @@ def process_row(row, attachment_package, sent_email_log):
             name=row["Name"],
             relevant_field=relevant_field,
             attachment_package=attachment_package,
-                     
         )
         sent_email_log[row["emails"]] = datetime.now()  # Log the timestamp
-
-        print("Waiting 1 second for delivery confirmation...")
-        time.sleep(1)
-        st.write(f"Email sent successfully to: {row['emails']}")
-
-        # if not check_for_bounce(row["emails"], sent_email_log):  # Check bounce using sent_email_log
-        #     output_data.append({"Name": row["Name"], "Company name": row["Company name"], "emails": row["emails"]})
-            
-        #     with open(OUTPUT_FILE, "a") as f:
-        #         f.write(f"{row['Name']},{row['Company name']},{row['emails']}\n")
-        #     print(f"Email validated for {row['emails']}")
-        # else:
-        #     print(f"Email invalid: {row['emails']}")
-
+        print("Email sent successfully to:", row["emails"])
     except Exception as e:
         print(f"Error processing row: {e}")
-        st.write(f"Error processing email for {row['emails']}: {e}")
-
-
- 
-        
-
-# Output list to collect valid emails
-output_data = []
 
 # Process button for sending emails
 if st.button("Send Emails"):
-    sent_email_log = {}
-    progress_container = st.empty()  # Reserve space for the progress bar
-    percentage_container = st.empty()  # Reserve space for the percentage text
     if uploaded_file and email_sender and password_1 and name_sender:
+        sent_email_log = {}
+        progress_container = st.empty()  # Reserve space for the progress bar
+        percentage_container = st.empty()  # Reserve space for the percentage text
         progress_bar = progress_container.progress(0)  # Initialize the progress bar
-        total_emails = len(df)  # Total number of emails
-        emails_sent = 0  # Counter for sent emails
-        
-        
-        
-        # Handling the attachment
-        
+
+        total_emails = len(df)
+        emails_sent = 0
+
+        # Handle attachment
+        attachment_package = None
         if attachment_file is not None:
-            filename = f"{name_sender}_Resume.pdf"
-            # Create the MIMEBase attachment package
-            attachment_package = MIMEBase('application', 'octet-stream')
-            # Read the uploaded file's content
-            attachment_package.set_payload(attachment_file.read())
-            # Encode the payload to base64
-            encoders.encode_base64(attachment_package)
-            # Add appropriate header for the attachment
-            attachment_package.add_header(
-                'Content-Disposition',
-                    f'attachment; filename="{filename}"'
-    )
-        else:
-            attachment_package = None  # No attachment if the file is not uploaded
+            attachment_package = cache_attachment(attachment_file.read(), f"{name_sender}_Resume.pdf")
 
-    BATCH_SIZE = 1
-    x = 0
-    
+        # Send emails in batches
+        BATCH_SIZE = 10
+        x = 0
+        while x < total_emails:
+            print(f"Processing batch starting at index {x}")
+            batch = df.iloc[x:x + BATCH_SIZE]
 
-    while x < len(df):
-        print(f"Processing batch starting at index {x}")
-    
-        # Extract the current batch
-        batch = df.iloc[x:x + BATCH_SIZE]
-    
-        # Process the batch with ThreadPoolExecutor
-        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-            futures = []
-            for _, row in batch.iterrows():  # Iterate only over the batch
-                future = executor.submit(process_row, row.to_dict(), attachment_package, sent_email_log)
-                futures.append(future)
-        
-            concurrent.futures.wait(futures)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                futures = [
+                    executor.submit(process_row, row.to_dict(), attachment_package, sent_email_log)
+                    for _, row in batch.iterrows()
+                ]
+                concurrent.futures.wait(futures)
 
-        emails_sent += len(batch)
-        progress_percentage = (emails_sent / total_emails) * 100
-        progress_bar.progress(int(progress_percentage))
-        percentage_container.write(f"Progress: {progress_percentage}%")
-    # Move to the next batch
-        x += BATCH_SIZE
-        print(f"Batch completed, waiting 45 seconds...")
-        time.sleep(30)  # Wait time between batches    
- 
+            emails_sent += len(batch)
+            progress_percentage = (emails_sent / total_emails) * 100
+            progress_bar.progress(int(progress_percentage))
+            percentage_container.write(f"Progress: {progress_percentage:.2f}%")
 
-        # Output file for successful emails
-    output_df = pd.DataFrame(output_data)
-    output_file = "output_emails.csv"
-    output_df.to_csv(output_file, index=False)
+            x += BATCH_SIZE
+            print("Batch completed, waiting 30 seconds...")
+            time.sleep(30)
 
-    st.write("Emails have been sent successfully. Below is the valid email list.")
-    st.write(output_df)
-    
-    # Download button for the result CSV
-    with open(output_file, "rb") as f:
-            
-            
-            st.download_button(
-                label="Download Valid Emails CSV",
-                data=f,
-                file_name="valid_emails.csv",
-                mime="text/csv"
-            )
-else:
-    st.warning("Please upload the CSV file and provide the email sender credentials.")
-
-
-
+        st.success("Emails have been sent successfully.")
