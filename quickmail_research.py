@@ -80,9 +80,9 @@ def getRelevantField(company):
         return "technology and data solutions"
 
 # Sanitize email headers
-@st.cache_data
+
 def sanitize_header(value):
-    return value.replace("\n", "").replace("\r", "").strip()
+    return value.encode('utf-8').decode('utf-8').replace("\n", "").replace("\r", "").strip()
 
 # Function to send email
 def send_email(receiver_email, name, relevant_field, attachment_package):
@@ -93,7 +93,7 @@ def send_email(receiver_email, name, relevant_field, attachment_package):
         msg['To'] = sanitize_header(receiver_email)
 
         processed_content = Mail_Content.format(name=name, field=relevant_field)
-        plain_text = f"Dear {name},\n\n{processed_content}\n\nBest Regards,\n{name_sender}\n"
+        plain_text = f"Dear {name},\n\n{processed_content}\n\nBest Regards,\n{name_sender}\n".encode('utf-8').decode('utf-8')
         msg.set_content(plain_text)
 
         if attachment_package:
