@@ -82,7 +82,8 @@ def getRelevantField(company):
 # Sanitize email headers
 
 def sanitize_header(value):
-    return value.encode('utf-8').decode('utf-8').replace("\n", "").replace("\r", "").strip()
+    cleaned_text = ''.join([char if ord(char) < 128 else ' ' for char in value])
+    return cleaned_text.encode('utf-8').decode('utf-8').replace("\n", "").replace("\r", "").strip()
 
 # Function to send email
 def send_email(receiver_email, name, relevant_field, attachment_package):
