@@ -94,7 +94,7 @@ def send_email(receiver_email, name, relevant_field, attachment_package):
 
         processed_content = Mail_Content.format(name=name, field=relevant_field)
         plain_text = f"Dear {name},\n\n{processed_content}\n\nBest Regards,\n{name_sender}\n".encode('utf-8').decode('utf-8')
-        msg.set_content(plain_text)
+        msg.set_content(plain_text, subtype='plain', charset='utf-8')
 
         if attachment_package:
             msg.add_attachment(attachment_package.get_payload(decode=True), maintype='application', subtype='octet-stream', filename=attachment_package.get_filename())
