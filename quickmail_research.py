@@ -89,12 +89,12 @@ def sanitize_header(value):
 def send_email(receiver_email, name, relevant_field, attachment_package):
     try:
         msg = EmailMessage()
-        msg['Subject'] = sanitize_header("Are you Nervous About Placement Season? Don't worry we are here to help!")
+        msg['Subject'] = sanitize_header("Request for Research Internship Opportunity Under Your Guidance")
         msg['From'] = sanitize_header(formataddr((name_sender, email_sender)))
         msg['To'] = sanitize_header(receiver_email)
 
         processed_content = Mail_Content.format(name=name, field=relevant_field)
-        plain_text = f"Dear {name},\n\n{processed_content}\n\nBest Regards,\n{name_sender}\n".encode('utf-8').decode('utf-8')
+        plain_text = f"Respected Prof. {name},\n\n{processed_content}\n\nBest Regards,\n{name_sender}\n".encode('utf-8').decode('utf-8')
         cleaned_text = ''.join([char if ord(char) < 128 else ' ' for char in plain_text])
         msg.set_content(cleaned_text, subtype='plain', charset='utf-8')
 
