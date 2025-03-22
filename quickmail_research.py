@@ -113,11 +113,11 @@ def send_email(receiver_email, name, relevant_field, attachment_package):
 def process_row(row, attachment_package, sent_email_log):
     try:
         print("Processing email for:", row["Name"])
-        # relevant_field = getRelevantField(row["Company name"])
+        relevant_field = getRelevantField(row["Company name"])
         send_email(
             receiver_email=row["emails"],
             name=row["Name"],
-            # relevant_field=relevant_field,
+            relevant_field=relevant_field,
             attachment_package=attachment_package,
         )
         sent_email_log[row["emails"]] = datetime.now()  # Log the timestamp
