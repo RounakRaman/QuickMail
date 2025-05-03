@@ -255,6 +255,7 @@ if st.button("Send Emails"):
             attachment_package = None  # No attachment if the file is not uploaded
 
     BATCH_SIZE = 1
+    
     x = 0
     
 
@@ -280,7 +281,7 @@ if st.button("Send Emails"):
     # Move to the next batch
         x += BATCH_SIZE
         print(f"Batch completed, waiting 45 seconds...")
-        time.sleep(45)  # Wait time between batches    
+        time.sleep(10)  # Wait time between batches    
  
 
         # Output file for successful emails
