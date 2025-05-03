@@ -254,7 +254,7 @@ if st.button("Send Emails"):
         else:
             attachment_package = None  # No attachment if the file is not uploaded
 
-    BATCH_SIZE = 1
+    BATCH_SIZE = 5
     
     x = 0
     
