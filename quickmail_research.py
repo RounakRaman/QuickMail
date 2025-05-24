@@ -89,7 +89,7 @@ def sanitize_header(value):
 def send_email(receiver_email, name, relevant_field, attachment_package):
     try:
         msg = EmailMessage()
-        msg['Subject'] = sanitize_header(f"Hi {name}, I am Priyanshi Jain seeking Internship Opportunity at {company}")
+        msg['Subject'] = sanitize_header(f"Hi {name}, I am Priyanshi Jain seeking Internship Opportunity at your organisation.")
         msg['From'] = sanitize_header(formataddr((name_sender, email_sender)))
         msg['To'] = sanitize_header(receiver_email)
 
