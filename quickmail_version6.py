@@ -84,7 +84,7 @@ def getSubject(name, company):
 def send_email(receiver_email, name, relevant_field, attachment_package, company):
     try:
         msg = EmailMessage()
-        msg['Subject'] = f"Hi {name},Could you please refer me to open positions at {company}?"
+        msg['Subject'] = f"Hi {name}, I am Priyanshi Jain seeking Internship Opportunity at {company}"
         msg['From'] = formataddr((f"{name_sender}", email_sender))
         msg['To'] = receiver_email
         processed_content = Mail_Content.format(name=name, company=company, field=relevant_field)
