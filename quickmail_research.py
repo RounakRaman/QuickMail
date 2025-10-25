@@ -18,6 +18,7 @@ import os
 import google.generativeai as genai
 from datetime import datetime
 import base64
+from email.header import Header
 
 # Constants
 SMTP_SERVER = 'smtp.gmail.com'
@@ -90,11 +91,12 @@ def send_email(receiver_email, name, relevant_field, attachment_package):
     try:
         msg = EmailMessage()
         msg['Subject'] = sanitize_header(f"Hi {name}, Want Consulting / Finance offers? Join students who made it.")
-        msg['From'] = sanitize_header(formataddr((name_sender, email_sender)))
+        msg['From'] = formataddr((str(Header(name_sender, 'utf-8')), email_sender))
+        msg['Reply-To'] = email_sender
         msg['To'] = sanitize_header(receiver_email)
 
         processed_content = Mail_Content.format(name=name, field=relevant_field)
-        plain_text = f"Hi {name},\n\n{processed_content}\n\nCatch you (maybe) inside,,\n{name_sender}\n".encode('utf-8').decode('utf-8')
+        plain_text = f"Hi {name},\n\n{processed_content}\n\nCatch you (maybe) inside,\n{name_sender}\nCo-Founder, BeyondTech\nNSUT' 25 ".encode('utf-8').decode('utf-8')
         cleaned_text = ''.join([char if ord(char) < 128 else ' ' for char in plain_text])
         msg.set_content(cleaned_text, subtype='plain', charset='utf-8')
 
@@ -102,8 +104,10 @@ def send_email(receiver_email, name, relevant_field, attachment_package):
             msg.add_attachment(attachment_package.get_payload(decode=True), maintype='application', subtype='octet-stream', filename=attachment_package.get_filename())
 
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as connection:
+            
             connection.login(user=email_sender, password=password_1)
-            connection.send_message(msg)
+            connection.send_message(msg, from_addr=email_sender, to_addrs=[receiver_email])
+
 
         print(f"Email successfully sent to {receiver_email}")
     except Exception as e:
