@@ -143,7 +143,7 @@ if st.button("Send Emails"):
         # Handle attachment
         attachment_package = None
         if attachment_file is not None:
-            attachment_package = cache_attachment(attachment_file.read(), f"{name_sender}_Resume.pdf")
+            attachment_package = cache_attachment(attachment_file.read(), f"Interview Questions.pdf")
 
         # Send emails in batches
         BATCH_SIZE = 10
