@@ -96,7 +96,7 @@ def send_email(receiver_email, name, relevant_field, attachment_package):
         msg['To'] = sanitize_header(receiver_email)
 
         processed_content = Mail_Content.format(name=name, field=relevant_field)
-        plain_text = f"Hi {name},\n\n{processed_content}\n\nCatch you (maybe) inside,\n{name_sender}\nBeyondTech\nNSUT' 26 ".encode('utf-8').decode('utf-8')
+        plain_text = f"Hi {name},\n\n{processed_content}\n\nCatch you (maybe) inside,\n{name_sender}\nCo-Founder BeyondTech\nNSUT' 25 ".encode('utf-8').decode('utf-8')
         cleaned_text = ''.join([char if ord(char) < 128 else ' ' for char in plain_text])
         msg.set_content(cleaned_text, subtype='plain', charset='utf-8')
 
