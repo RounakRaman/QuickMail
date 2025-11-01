@@ -39,10 +39,11 @@ name_sender = st.text_input("Enter Sender's Name :")
 email_sender = st.text_input('Enter Sender Email:')
 password_1 = st.text_input('Enter Email Password:', type="password")
 subject=st.text_input("Enter Your Subject:")
-Mail_Content = st.text_area("Enter only the body of the mail here:") 
-attachment_file = st.file_uploader('Upload your Resume/CV here: ', type=['pdf', 'docx', 'jpg'])
 designation=st.text_input("Enter Your Designation :")
 college_name=st.text_input("Enter College Name :")
+Mail_Content = st.text_area("Enter only the body of the mail here:") 
+attachment_file = st.file_uploader('Upload your Resume/CV here: ', type=['pdf', 'docx', 'jpg'])
+
 
 # Caching uploaded files and email databases
 @st.cache_data
