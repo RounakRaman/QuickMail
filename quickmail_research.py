@@ -38,8 +38,11 @@ st.title('Beyond Tech Promo Mail Sender')
 name_sender = st.text_input("Enter Sender's Name :")
 email_sender = st.text_input('Enter Sender Email:')
 password_1 = st.text_input('Enter Email Password:', type="password")
+subject=st.text_input("Enter Your Subject:")
 Mail_Content = st.text_area("Enter only the body of the mail here:") 
 attachment_file = st.file_uploader('Upload your Resume/CV here: ', type=['pdf', 'docx', 'jpg'])
+designation=st.text_input("Enter Your Designation :")
+college_name=st.text_input("Enter College Name :")
 
 # Caching uploaded files and email databases
 @st.cache_data
@@ -90,13 +93,13 @@ def sanitize_header(value):
 def send_email(receiver_email, name, relevant_field, attachment_package):
     try:
         msg = EmailMessage()
-        msg['Subject'] = sanitize_header(f"Hi {name}, Worried about placements?")
+        msg['Subject'] = sanitize_header(f"Hi {name}, {subject}")
         msg['From'] = formataddr((str(Header(name_sender, 'utf-8')), email_sender))
         msg['Reply-To'] = email_sender
         msg['To'] = sanitize_header(receiver_email)
 
         processed_content = Mail_Content.format(name=name, field=relevant_field)
-        plain_text = f"Hi {name},\n\n{processed_content}\n\nCatch you (maybe) inside,\n{name_sender}\nFounder BeyondTech\nDTU' 23 ".encode('utf-8').decode('utf-8')
+        plain_text = f"Hi {name},\n\n{processed_content}\n\nCatch you (maybe) inside,\n{name_sender}\n{designation}\n{college_name} ".encode('utf-8').decode('utf-8')
         cleaned_text = ''.join([char if ord(char) < 128 else ' ' for char in plain_text])
         msg.set_content(cleaned_text, subtype='plain', charset='utf-8')
 
