@@ -38,6 +38,10 @@ st.title('QuickMail Email Sending Tool')
 name_sender = st.text_input("Enter Sender's Name :")
 email_sender = st.text_input('Enter Sender Email:')
 password_1 = st.text_input('Enter Email Password:', type="password")
+subject=st.text_input("Enter Your Subject:")
+linkedin_id=st.text_input("Enter Your LinkedIn Url:")
+designation=st.text_input("Enter Your Designation :")
+college_name=st.text_input("Enter College Name :")
 Mail_Content = st.text_area("Enter only the body of the mail here:") 
 attachment_file = st.file_uploader('Upload your Resume/CV here: ', type=['pdf', 'docx', 'jpg'])
 
@@ -84,11 +88,11 @@ def getSubject(name, company):
 def send_email(receiver_email, name, relevant_field, attachment_package, company):
     try:
         msg = EmailMessage()
-        msg['Subject'] = f"Hi {name}, Seeking Full Time Opportunity at {company}"
+        msg['Subject'] = f"Hi {name}, {Subject} at {company}"
         msg['From'] = formataddr((f"{name_sender}", email_sender))
         msg['To'] = receiver_email
         processed_content = Mail_Content.format(name=name, company=company, field=relevant_field)
-        plain_text = f"Hi {name}\n\n{processed_content}\n\nBest Regards,\n{name_sender}\n\n"
+        plain_text = f"Hi {name}\n\n{processed_content}\n\nBest Regards,\n{name_sender}\n{designation}\n{college_name}\nLinkedin Profile: {linkedin_id}\n"
 
 
         # html_content = f'''
